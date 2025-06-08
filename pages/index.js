@@ -1,64 +1,47 @@
 import { useState } from 'react';
 
 export default function Home() {
-  const [step, setStep] = useState('start');
-  const [inputText, setInputText] = useState('');
+  const [jobText, setJobText] = useState('');
+  const [analysis, setAnalysis] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleStart = (type) => {
-    setStep(type);
-  };
+  const handleAnalyze = async () => {
+    if (!jobText.trim()) return;
+    setLoading(true);
+    setAnalysis('');
 
-  const handleSubmit = () => {
-    setStep('analyse');
+    const response = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobText }),
+    });
+
+    const data = await response.json();
+    setAnalysis(data.analysis || 'No analysis returned.');
+    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50 text-center">
-      <h1 className="text-3xl font-bold mb-6">Velkommen til Iben.ai</h1>
+    <div style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto' }}>
+      <h1>Iben.ai – Første analyse</h1>
+      <p>Lim inn en stillingsannonse under:</p>
+      <textarea
+        rows={12}
+        value={jobText}
+        onChange={(e) => setJobText(e.target.value)}
+        placeholder="Lim inn stillingsannonsen her..."
+        style={{ width: '100%', padding: '1rem' }}
+      />
+      <button onClick={handleAnalyze} style={{ marginTop: '1rem', padding: '0.5rem 1rem' }}>
+        Analyser
+      </button>
 
-      {step === 'start' && (
-        <div className="space-y-4">
-          <p className="text-lg">Hva vil du gjøre?</p>
-          <button
-            onClick={() => handleStart('annonse')}
-            className="px-4 py-2 bg-blue-600 text-white rounded shadow"
-          >
-            📄 Lim inn stillingsannonse
-          </button>
-          <button
-            onClick={() => handleStart('aapen')}
-            className="px-4 py-2 bg-green-600 text-white rounded shadow"
-          >
-            📝 Åpen søknad
-          </button>
-        </div>
-      )}
+      {loading && <p>Analyserer…</p>}
 
-      {(step === 'annonse' || step === 'aapen') && (
-        <div className="space-y-4 max-w-xl w-full mt-4">
-          <textarea
-            rows={8}
-            className="w-full p-2 border border-gray-300 rounded"
-            placeholder={step === 'annonse' ? "Lim inn hele stillingsannonsen her..." : "Skriv hvilken stilling du søker og hvilket firma det gjelder..."}
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-          />
-          <button
-            onClick={handleSubmit}
-            className="px-4 py-2 bg-purple-600 text-white rounded shadow"
-          >
-            Analyser teksten
-          </button>
-        </div>
-      )}
-
-      {step === 'analyse' && (
-        <div className="mt-6 max-w-xl">
-          <h2 className="text-xl font-semibold mb-4">🧠 Iben sin første analyse:</h2>
-          <p className="text-left whitespace-pre-line bg-white p-4 border rounded">
-            {inputText}
-          </p>
-          <p className="mt-4">✅ Neste: Generere søknad, CV og Gameplan basert på dette.</p>
+      {analysis && (
+        <div style={{ marginTop: '2rem', whiteSpace: 'pre-wrap', backgroundColor: '#f9f9f9', padding: '1rem' }}>
+          <h3>Analyse:</h3>
+          <p>{analysis}</p>
         </div>
       )}
     </div>
