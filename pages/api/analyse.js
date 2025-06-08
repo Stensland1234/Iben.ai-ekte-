@@ -1,45 +1,47 @@
-// pages/api/analyse.js
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Kun POST-støttes' });
+    return res.status(405).json({ error: 'Only POST requests allowed' });
   }
 
   try {
-    const { stillingsannonse } = req.body;
+    const { jobAd } = req.body;
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: 'OpenAI API key not set' });
+    }
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer $
-          {process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4",
+        model: 'gpt-4',
         messages: [
           {
-            role: "system",
-            content: "Du er en ekspert på rekruttering og analyse av stillingsannonser. Gi en kort analyse av kravene i denne annonsen.",
+            role: 'system',
+            content: 'Du er en ekspert på rekruttering og skal analysere en stillingsannonse.',
           },
           {
-            role: "user",
-            content: stillingsannonse,
+            role: 'user',
+            content: jobAd,
           },
         ],
-        temperature: 0.3,
+        temperature: 0.7,
       }),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error?.message || "Feil i OpenAI-svar");
+      return res.status(500).json({ error: data.error?.message || 'Ukjent feil fra OpenAI' });
     }
 
-    const analyse = data.choices[0].message.content;
-    res.status(200).json({ analyse });
+    return res.status(200).json({ result: data.choices[0].message.content });
   } catch (error) {
-    console.error("Feil i analyse:", error.message);
-    res.status(500).json({ error: "Kunne ikke analysere stillingsannonsen" });
+    console.error('Feil i analyse:', error);
+    return res.status(500).json({ error: 'Serverfeil under analyse' });
   }
 }
