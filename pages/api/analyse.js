@@ -1,43 +1,36 @@
-// pages/api/analyse.js
+import { OpenAI } from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Only POST allowed" });
-  }
+  const { annonse } = req.body;
 
-  const { adText } = req.body;
-
-  if (!process.env.OPENAI_API_KEY) {
-    return res.status(500).json({ error: "Missing OpenAI API Key" });
+  if (!annonse) {
+    return res.status(400).json({ error: 'Mangler annonse' });
   }
 
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4",
-        messages: [
-          {
-            role: "system",
-            content: "Du er en ekspert på stillingsanalyser for jobbsøkere i Norden.",
-          },
-          {
-            role: "user",
-            content: `Analyser denne stillingsannonsen og gi en punktvis oversikt over krav og muligheter: ${adText}`,
-          },
-        ],
-      }),
+    const response = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        {
+          role: "system",
+          content: "Du er en ekspert i rekruttering og skal analysere en stillingsannonse og finne ut hva arbeidsgiver egentlig ser etter. Gi en kort oppsummering av de viktigste kravene og ønskene, og hva kandidaten bør fokusere på.",
+        },
+        {
+          role: "user",
+          content: annonse,
+        },
+      ],
     });
 
-    const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content;
-    res.status(200).json({ reply });
+    const svar = response.choices[0].message.content;
+    res.status(200).json({ svar });
+
   } catch (error) {
-    console.error("OpenAI error:", error);
-    res.status(500).json({ error: "Something went wrong" });
+    console.error('OpenAI-feil:', error);
+    res.status(500).json({ error: 'Feil under analyse' });
   }
 }
