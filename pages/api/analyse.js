@@ -1,33 +1,42 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Only POST allowed' });
+    return res.status(405).json({ message: 'Only POST requests allowed' });
   }
 
-  const { inputText } = req.body;
+  const { jobText } = req.body;
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
+  if (!jobText) {
+    return res.status(400).json({ message: 'No jobText provided' });
+  }
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: "gpt-4",
+      model: 'gpt-4',
       messages: [
         {
-          role: "system",
-          content: "Du er en ekspert på nordiske jobbsøknader. Gi en analyse av en stillingsannonse: Hvilke krav stilles? Hva bør kandidaten fremheve? Hva slags rolle er det?",
+          role: 'system',
+          content: 'Du er en ekspert i å lese og analysere nordiske stillingsannonser. Du skal forklare hva arbeidsgiver ser etter, og hvordan en kandidat bør skrive søknad og CV for å passe perfekt til stillingen. Svar alltid på norsk, uansett språk i annonsen.',
         },
         {
-          role: "user",
-          content: inputText,
+          role: 'user',
+          content: jobText,
         },
       ],
+      temperature: 0.6,
     }),
   });
 
   const data = await response.json();
-  const answer = data.choices?.[0]?.message?.content;
 
-  return res.status(200).json({ result: answer });
+  if (data.error) {
+    return res.status(500).json({ message: data.error.message });
+  }
+
+  const result = data.choices?.[0]?.message?.content || 'Ingen analyse kunne genereres.';
+  return res.status(200).json({ analysis: result });
 }
