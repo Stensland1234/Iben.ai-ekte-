@@ -30,13 +30,12 @@ export default async function handler(req, res) {
           content: annonse,
         },
       ],
-      temperature: 0.7,
     });
 
     const svar = completion.data.choices[0].message.content;
     res.status(200).json({ analyse: svar });
   } catch (error) {
-    console.error(error.response?.data || error.message);
+    console.error("OpenAI-feil:", error?.response?.data || error.message);
     res.status(500).json({ message: "Feil under OpenAI-analyse." });
   }
 }
