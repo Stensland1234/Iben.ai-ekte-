@@ -1,62 +1,64 @@
 import { useState } from 'react';
 
 export default function Home() {
-  const [mode, setMode] = useState(null);
-  const [adText, setAdText] = useState('');
-  const [company, setCompany] = useState('');
-  const [role, setRole] = useState('');
-  const [motivation, setMotivation] = useState('');
+  const [step, setStep] = useState('start');
+  const [inputText, setInputText] = useState('');
+
+  const handleStart = (type) => {
+    setStep(type);
+  };
+
+  const handleSubmit = () => {
+    setStep('analyse');
+  };
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-      <h1>Hei {`Espen`}, la oss lage din perfekte jobbsøknad</h1>
-      {!mode && (
-        <div>
-          <p>Hva vil du starte med?</p>
-          <button onClick={() => setMode('ad')}>📄 Lim inn stillingsannonse</button>
-          <button onClick={() => setMode('open')}>📝 Åpen søknad</button>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gray-50 text-center">
+      <h1 className="text-3xl font-bold mb-6">Velkommen til Iben.ai</h1>
+
+      {step === 'start' && (
+        <div className="space-y-4">
+          <p className="text-lg">Hva vil du gjøre?</p>
+          <button
+            onClick={() => handleStart('annonse')}
+            className="px-4 py-2 bg-blue-600 text-white rounded shadow"
+          >
+            📄 Lim inn stillingsannonse
+          </button>
+          <button
+            onClick={() => handleStart('aapen')}
+            className="px-4 py-2 bg-green-600 text-white rounded shadow"
+          >
+            📝 Åpen søknad
+          </button>
         </div>
       )}
 
-      {mode === 'ad' && (
-        <div style={{ marginTop: '2rem' }}>
-          <h2>Lim inn stillingsannonse (tekst eller lenke)</h2>
+      {(step === 'annonse' || step === 'aapen') && (
+        <div className="space-y-4 max-w-xl w-full mt-4">
           <textarea
-            rows="10"
-            cols="60"
-            value={adText}
-            onChange={(e) => setAdText(e.target.value)}
-            placeholder="Lim inn teksten her..."
+            rows={8}
+            className="w-full p-2 border border-gray-300 rounded"
+            placeholder={step === 'annonse' ? "Lim inn hele stillingsannonsen her..." : "Skriv hvilken stilling du søker og hvilket firma det gjelder..."}
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
           />
-          <br />
-          <button onClick={() => alert('✅ OK! Går videre til analyse')}>Neste</button>
+          <button
+            onClick={handleSubmit}
+            className="px-4 py-2 bg-purple-600 text-white rounded shadow"
+          >
+            Analyser teksten
+          </button>
         </div>
       )}
 
-      {mode === 'open' && (
-        <div style={{ marginTop: '2rem' }}>
-          <h2>Åpen søknad</h2>
-          <input
-            placeholder="Firmanavn"
-            value={company}
-            onChange={(e) => setCompany(e.target.value)}
-          />
-          <br />
-          <input
-            placeholder="Ønsket rolle"
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-          />
-          <br />
-          <textarea
-            rows="5"
-            cols="60"
-            placeholder="Hva vil du bidra med?"
-            value={motivation}
-            onChange={(e) => setMotivation(e.target.value)}
-          />
-          <br />
-          <button onClick={() => alert('✅ OK! Går videre til generering')}>Neste</button>
+      {step === 'analyse' && (
+        <div className="mt-6 max-w-xl">
+          <h2 className="text-xl font-semibold mb-4">🧠 Iben sin første analyse:</h2>
+          <p className="text-left whitespace-pre-line bg-white p-4 border rounded">
+            {inputText}
+          </p>
+          <p className="mt-4">✅ Neste: Generere søknad, CV og Gameplan basert på dette.</p>
         </div>
       )}
     </div>
