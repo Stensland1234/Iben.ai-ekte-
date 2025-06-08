@@ -1,36 +1,42 @@
-import { OpenAI } from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { Configuration, OpenAIApi } from "openai";
 
 export default async function handler(req, res) {
-  const { annonse } = req.body;
-
-  if (!annonse) {
-    return res.status(400).json({ error: 'Mangler annonse' });
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Only POST requests allowed" });
   }
 
+  const { annonse } = req.body;
+
+  if (!process.env.OPENAI_API_KEY) {
+    return res.status(500).json({ message: "OpenAI API key missing" });
+  }
+
+  const configuration = new Configuration({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+
+  const openai = new OpenAIApi(configuration);
+
   try {
-    const response = await openai.chat.completions.create({
+    const completion = await openai.createChatCompletion({
       model: "gpt-4",
       messages: [
         {
           role: "system",
-          content: "Du er en ekspert i rekruttering og skal analysere en stillingsannonse og finne ut hva arbeidsgiver egentlig ser etter. Gi en kort oppsummering av de viktigste kravene og ønskene, og hva kandidaten bør fokusere på.",
+          content: "Du er en ekspert på jobbsøknader. Les stillingsannonsen og gi en analyse av hva arbeidsgiver ser etter – og hva en søker bør fokusere på for å få jobben.",
         },
         {
           role: "user",
           content: annonse,
         },
       ],
+      temperature: 0.7,
     });
 
-    const svar = response.choices[0].message.content;
-    res.status(200).json({ svar });
-
+    const svar = completion.data.choices[0].message.content;
+    res.status(200).json({ analyse: svar });
   } catch (error) {
-    console.error('OpenAI-feil:', error);
-    res.status(500).json({ error: 'Feil under analyse' });
+    console.error(error.response?.data || error.message);
+    res.status(500).json({ message: "Feil under OpenAI-analyse." });
   }
 }
